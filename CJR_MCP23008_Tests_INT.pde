@@ -7,7 +7,7 @@
 #define BUTTON_RIGHT 0x08
 #define BUTTON_SELECT 0x10
 uint8_t button_pins[5];
-bool BUTTONPRESSED = true;
+bool BUTTONPRESSED = false;
 //uint8_t readButtons();
 
 // Basic pin reading and pullup test for the MCP23008 I/O expander
@@ -30,6 +30,53 @@ bool BUTTONPRESSED = true;
 Adafruit_MCP23008 mcp;
 
 
+void buttonPress()
+{
+	//check the buttons and clear the INT
+	digitalWrite(13,HIGH);
+	BUTTONPRESSED = true; // set flag so main loop knows
+	//delay(70);
+	//Serial.println("INTERRUPT!!!"); //for debugging
+	
+	
+}
+
+uint8_t readButtons(void) {
+  uint8_t reply = 0x1F;
+
+  for (uint8_t i=0; i<5; i++) {
+    reply &= ~((mcp.digitalRead(button_pins[i])) << i);
+  }
+  return reply;
+}
+
+void handlebuttonPress (){
+	delay(50);
+	  BUTTONPRESSED = false;
+	  digitalWrite(13, LOW);
+uint8_t buttons = readButtons();
+  if (buttons) {
+    if (buttons & BUTTON_UP) {
+      Serial.print("UP ");
+    }
+    if (buttons & BUTTON_DOWN) {
+      Serial.print("DOWN ");
+    }
+    if (buttons & BUTTON_LEFT) {
+      Serial.print("LEFT ");
+    }
+    if (buttons & BUTTON_RIGHT) {
+      Serial.print("RIGHT ");
+    }
+    if (buttons & BUTTON_SELECT) {
+      Serial.print("SELECT ");
+    }
+  }
+
+}
+
+
+
 void setup()
 {
 	button_pins[0] = 0;
@@ -49,33 +96,15 @@ void setup()
   pinMode(12, INPUT);
   pinMode(13, OUTPUT);  // use the p13 LED as debugging
   Serial.begin(9600);
-  attachInterrupt(0, checkMCPButtons, FALLING);
+  attachInterrupt(0, buttonPress, FALLING);
 
 }
 
 void loop()
 {
-if (BUTTONPRESSED) {
-	uint8_t buttons = readButtons();
-  if (buttons) {
-    if (buttons & BUTTON_UP) {
-      Serial.print("UP ");
-    }
-    if (buttons & BUTTON_DOWN) {
-      Serial.print("DOWN ");
-    }
-    if (buttons & BUTTON_LEFT) {
-      Serial.print("LEFT ");
-    }
-    if (buttons & BUTTON_RIGHT) {
-      Serial.print("RIGHT ");
-    }
-    if (buttons & BUTTON_SELECT) {
-      Serial.print("SELECT ");
-    }
-  }
-  BUTTONPRESSED = false;
-}
+if (BUTTONPRESSED)
+	handlebuttonPress();
+	
 
 
   //for (uint8_t i=0; i<4; i++) {
@@ -96,23 +125,4 @@ if (BUTTONPRESSED) {
   //}
 
 
-}
-
-void checkMCPButtons()
-{
-	//check the buttons and clear the INT
-	//digitalWrite(13,HIGH);
-	delay(70);
-	Serial.println("INTERRUPT!!!");
-	BUTTONPRESSED = true;
-	
-}
-
-uint8_t readButtons(void) {
-  uint8_t reply = 0x1F;
-
-  for (uint8_t i=0; i<5; i++) {
-    reply &= ~((mcp.digitalRead(button_pins[i])) << i);
-  }
-  return reply;
 }
